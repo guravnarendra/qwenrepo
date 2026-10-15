@@ -1,0 +1,28 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Downloaded checkpoints & weights (~19 GB - downloads automatically)
+qwen21_ckpts/
+Wan2GP/
+
+# Output images & zips
+outputs/
+
+# Cloudflared binaries
+cloudflared
+cloudflared.exe
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Jupyter checkpoints
+.ipynb_checkpoints/

@@ -1,0 +1,15 @@
+mmgp==3.8.2
+transformers==4.54.0
+diffusers==0.36.0
+gradio==5.50.0
+optimum-quanto
+accelerate
+einops
+ffmpeg-python
+hf_xet
+huggingface_hub
+safetensors
+psutil
+numpy
+pillow
+fastapi
