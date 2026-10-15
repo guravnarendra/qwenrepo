@@ -142,7 +142,7 @@ if "!PYTHON_CMD!"=="" (
         exit /b 1
     )
     
-    echo Installing Python 3.10 (adding to PATH)...
+    echo Installing Python 3.10 and adding to PATH...
     start /wait "" "%TEMP%\python_installer.exe" /quiet InstallAllUsers=0 PrependPath=1 Include_test=0 SimpleInstall=1
     del /f /q "%TEMP%\python_installer.exe" >nul 2>nul
     
@@ -183,7 +183,7 @@ echo [5/6] Checking and Installing PyTorch CUDA and dependencies...
 
 python -c "import torch; assert torch.cuda.is_available()" >nul 2>nul
 if !errorlevel! neq 0 (
-    echo Installing PyTorch with CUDA 12.4 support (this takes a few minutes)...
+    echo Installing PyTorch with CUDA 12.4 support...
     python -m pip install --upgrade pip
     pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
     if !errorlevel! neq 0 (
