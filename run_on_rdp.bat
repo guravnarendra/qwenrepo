@@ -19,6 +19,8 @@ set "CLONE_DIR=qwenrepo"
 if not exist "run.py" (
     if exist "%CLONE_DIR%\run.py" (
         cd /d "%CLONE_DIR%"
+        call run_on_rdp.bat
+        exit /b 0
     ) else (
         echo [INFO] Project files not found in current folder.
         echo Checking Git to clone repository from GitHub...
@@ -26,7 +28,6 @@ if not exist "run.py" (
     )
 )
 
-:: =====================================================================
 :: =====================================================================
 :: 2. CHECK / INSTALL GIT (OPTIONAL)
 :: =====================================================================
@@ -88,8 +89,10 @@ if not exist "run.py" (
     )
     
     if exist "%CLONE_DIR%\run.py" (
+        echo [OK] Project ready in %CLONE_DIR%. Launching installer...
         cd /d "%CLONE_DIR%"
-        echo [OK] Ready inside project folder: %CLONE_DIR%
+        call run_on_rdp.bat
+        exit /b 0
     ) else (
         echo [ERROR] Could not download project files.
         pause
@@ -108,15 +111,20 @@ echo.
 :: 4. CHECK / INSTALL PYTHON
 :: =====================================================================
 set "PYTHON_CMD="
-where python >nul 2>nul
-if !errorlevel! equ 0 (
-    for /f "tokens=2 delims= " %%v in ('python --version 2^>^&1') do set "PY_VER=%%v"
-    set "PYTHON_CMD=python"
-) else (
-    where py >nul 2>nul
-    if !errorlevel! equ 0 (
-        for /f "tokens=2 delims= " %%v in ('py --version 2^>^&1') do set "PY_VER=%%v"
-        set "PYTHON_CMD=py"
+del /f /q "%TEMP%\pyver.txt" >nul 2>nul
+python --version >"%TEMP%\pyver.txt" 2>nul
+if exist "%TEMP%\pyver.txt" (
+    set /p PY_VER=<"%TEMP%\pyver.txt"
+    del /f /q "%TEMP%\pyver.txt" >nul 2>nul
+    if not "!PY_VER!"=="" set "PYTHON_CMD=python"
+)
+
+if "!PYTHON_CMD!"=="" (
+    py --version >"%TEMP%\pyver.txt" 2>nul
+    if exist "%TEMP%\pyver.txt" (
+        set /p PY_VER=<"%TEMP%\pyver.txt"
+        del /f /q "%TEMP%\pyver.txt" >nul 2>nul
+        if not "!PY_VER!"=="" set "PYTHON_CMD=py"
     )
 )
 
