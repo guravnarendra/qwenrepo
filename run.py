@@ -68,23 +68,48 @@ def check_gpu():
 # =====================================================================
 def fetch_wan2gp():
     print(f"\n📥 Setting up Wan2GP (commit: {WAN2GP_COMMIT[:10]})...")
-    def git_run(*args):
-        subprocess.run(["git", "-C", WAN2GP_DIR, *args], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-    if not os.path.isdir(os.path.join(WAN2GP_DIR, ".git")):
-        shutil.rmtree(WAN2GP_DIR, ignore_errors=True)
-        os.makedirs(WAN2GP_DIR, exist_ok=True)
-        git_run("init", "-q")
-        git_run("remote", "add", "origin", "https://github.com/DeepBeepMeep/Wan2GP.git")
-
-    git_run("fetch", "-q", "--depth", "1", "origin", WAN2GP_COMMIT)
-    git_run("checkout", "-q", "-f", "FETCH_HEAD")
-    git_run("reset", "-q", "--hard")
-    git_run("clean", "-q", "-fd")
-
     handler_path = os.path.join(WAN2GP_DIR, "models", "qwen21", "qwen21_handler.py")
-    if not os.path.exists(handler_path):
-        raise RuntimeError("Wan2GP checkout is incomplete or corrupted.")
+    if os.path.exists(handler_path):
+        print("✅ Wan2GP ready.")
+        return
+
+    # Try git first if available
+    if shutil.which("git") is not None:
+        try:
+            def git_run(*args):
+                subprocess.run(["git", "-C", WAN2GP_DIR, *args], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+            if not os.path.isdir(os.path.join(WAN2GP_DIR, ".git")):
+                shutil.rmtree(WAN2GP_DIR, ignore_errors=True)
+                os.makedirs(WAN2GP_DIR, exist_ok=True)
+                git_run("init", "-q")
+                git_run("remote", "add", "origin", "https://github.com/DeepBeepMeep/Wan2GP.git")
+
+            git_run("fetch", "-q", "--depth", "1", "origin", WAN2GP_COMMIT)
+            git_run("checkout", "-q", "-f", "FETCH_HEAD")
+            git_run("reset", "-q", "--hard")
+            git_run("clean", "-q", "-fd")
+            if os.path.exists(handler_path):
+                print("✅ Wan2GP ready via Git.")
+                return
+        except Exception as e:
+            print(f"⚠️ Git setup failed ({e}), falling back to direct zip download...")
+
+    # Fallback to direct zip download
+    zip_url = f"https://github.com/DeepBeepMeep/Wan2GP/archive/{WAN2GP_COMMIT}.zip"
+    zip_dest = os.path.join(ROOT, "wan2gp_temp.zip")
+    print(f"🌐 Downloading Wan2GP from GitHub ({zip_url})...")
+    urllib.request.urlretrieve(zip_url, zip_dest)
+    import zipfile
+    with zipfile.ZipFile(zip_dest, "r") as zf:
+        zf.extractall(ROOT)
+    extracted_folder = os.path.join(ROOT, f"Wan2GP-{WAN2GP_COMMIT}")
+    if os.path.exists(WAN2GP_DIR):
+        shutil.rmtree(WAN2GP_DIR, ignore_errors=True)
+    if os.path.exists(extracted_folder):
+        os.rename(extracted_folder, WAN2GP_DIR)
+    if os.path.exists(zip_dest):
+        os.remove(zip_dest)
     print("✅ Wan2GP ready.")
 
 

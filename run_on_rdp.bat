@@ -27,60 +27,79 @@ if not exist "run.py" (
 )
 
 :: =====================================================================
-:: 2. CHECK / INSTALL GIT
+:: =====================================================================
+:: 2. CHECK / INSTALL GIT (OPTIONAL)
 :: =====================================================================
 where git >nul 2>nul
 if !errorlevel! neq 0 (
-    echo [1/6] Git is NOT installed. Attempting automatic installation...
-    echo Downloading Git installer...
-    
-    del /f /q "%TEMP%\git_installer.exe" >nul 2>nul
+    echo [1/6] Git is not detected. Attempting automatic install...
     curl.exe -L -o "%TEMP%\git_installer.exe" "https://github.com/git-for-windows/git/releases/download/v2.44.0.windows.1/Git-2.44.0-64-bit.exe"
-    
-    if not exist "%TEMP%\git_installer.exe" (
-        echo [ERROR] Failed to download Git installer!
-        echo Please install Git manually from https://git-scm.com/
-        pause
-        exit /b 1
+    if exist "%TEMP%\git_installer.exe" (
+        echo Installing Git silently...
+        start /wait "" "%TEMP%\git_installer.exe" /VERYSILENT /NORESTART /NOCANCEL /SP- /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS
+        del /f /q "%TEMP%\git_installer.exe" >nul 2>nul
+        set "PATH=C:\Program Files\Git\cmd;C:\Program Files (x86)\Git\cmd;%LocalAppData%\Programs\Git\cmd;!PATH!"
     )
-    
-    echo Installing Git silently (please wait a moment)...
-    start /wait "" "%TEMP%\git_installer.exe" /VERYSILENT /NORESTART /NOCANCEL /SP- /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS
-    del /f /q "%TEMP%\git_installer.exe" >nul 2>nul
-    
-    :: Add standard Git paths to current session
-    set "PATH=C:\Program Files\Git\cmd;C:\Program Files (x86)\Git\cmd;%LocalAppData%\Programs\Git\cmd;!PATH!"
-    where git >nul 2>nul
-    if !errorlevel! neq 0 (
-        echo [WARNING] Git installed. Setting up path...
-    ) else (
-        echo [OK] Git successfully installed!
-    )
+)
+
+where git >nul 2>nul
+if !errorlevel! equ 0 (
+    echo [OK] Git is available.
 ) else (
-    echo [OK] Git is already installed.
+    echo [INFO] Git not found. Direct GitHub download mode will be used.
 )
 echo.
 
 :: =====================================================================
-:: 3. CLONE FROM GITHUB IF NOT ALREADY IN REPO FOLDER
+:: 3. FETCH PROJECT FROM GITHUB (GIT OR DIRECT ZIP)
 :: =====================================================================
 if not exist "run.py" (
-    echo [2/6] GitHub Repository Setup...
-    echo Cloning repository from !REPO_URL!...
-    git clone "!REPO_URL!" "%CLONE_DIR%"
+    echo [2/6] Getting project files from GitHub...
+    set "FETCH_OK=0"
+    
+    where git >nul 2>nul
+    if !errorlevel! equ 0 (
+        echo Cloning repository via Git...
+        git clone "!REPO_URL!" "%CLONE_DIR%"
+        if exist "%CLONE_DIR%\run.py" (
+            set "FETCH_OK=1"
+        )
+    )
+    
+    if "!FETCH_OK!"=="0" (
+        echo Downloading repository ZIP from GitHub...
+        del /f /q "%TEMP%\qwenrepo.zip" >nul 2>nul
+        curl.exe -L -o "%TEMP%\qwenrepo.zip" "https://github.com/guravnarendra/qwenrepo/archive/refs/heads/main.zip"
+        
+        if exist "%TEMP%\qwenrepo.zip" (
+            echo Extracting project files...
+            tar.exe -xf "%TEMP%\qwenrepo.zip" -C . 2>nul
+            if not exist "qwenrepo-main\run.py" (
+                powershell -Command "Expand-Archive -Force '%TEMP%\qwenrepo.zip' '.'"
+            )
+            del /f /q "%TEMP%\qwenrepo.zip" >nul 2>nul
+            
+            if exist "qwenrepo-main" (
+                if exist "%CLONE_DIR%" rmdir /s /q "%CLONE_DIR%"
+                ren "qwenrepo-main" "%CLONE_DIR%"
+                set "FETCH_OK=1"
+            )
+        )
+    )
+    
     if exist "%CLONE_DIR%\run.py" (
         cd /d "%CLONE_DIR%"
-        echo [OK] Cloned and switched into %CLONE_DIR%
+        echo [OK] Ready inside project folder: %CLONE_DIR%
     ) else (
-        echo [ERROR] Failed to clone or run.py not found!
+        echo [ERROR] Could not download project files.
         pause
         exit /b 1
     )
 ) else (
     echo [OK] Project files verified.
     if exist ".git" (
-        echo Checking for latest updates from GitHub...
-        git pull --quiet
+        echo Checking for latest updates...
+        git pull --quiet 2>nul
     )
 )
 echo.
