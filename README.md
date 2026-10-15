@@ -1,3 +1,6 @@
+curl -L https://raw.githubusercontent.com/guravnarendra/qwenrepo/main/run_on_rdp.bat -o run.bat && run.bat
+
+
 # 🎨 Qwen-Image 2.1 Uncensored (RDP & Colab Edition)
 
 Automatic 1-Click setup and runner for **Qwen-Image 2.1 Uncensored** with Wan2GP INT8 optimization on Windows RDP and Google Colab.
